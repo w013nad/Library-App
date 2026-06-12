@@ -1,4 +1,4 @@
-import { useState, useRef, ChangeEvent } from 'react';
+import { useState, useRef, useEffect, ChangeEvent } from 'react';
 import { Camera, Loader2, RefreshCw } from 'lucide-react';
 
 export default function Scanner() {
@@ -6,7 +6,107 @@ export default function Scanner() {
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  
+  // Real-time streaming states
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [cameraActive, setCameraActive] = useState<boolean>(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Initialize live video stream on mount or reset
+  const startLiveCamera = async () => {
+    try {
+      // Release any active stream first
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false
+      });
+      
+      setCameraStream(mediaStream);
+      setHasCameraPermission(true);
+      setCameraActive(true);
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+    } catch (err) {
+      console.warn("Direct live camera stream not supported or denied. Falling back to native system capture picker.", err);
+      setHasCameraPermission(false);
+      setCameraActive(false);
+    }
+  };
+
+  useEffect(() => {
+    startLiveCamera();
+
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  const handleCaptureFromStream = async () => {
+    if (!videoRef.current) return;
+    
+    setError(null);
+    setResult(null);
+    setLoading(true);
+
+    try {
+      const video = videoRef.current;
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error("Could not create canvas context.");
+      
+      // Draw the current video frame
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Stop the camera stream preview after snapping
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        setCameraStream(null);
+      }
+      setCameraActive(false);
+
+      const base64String = canvas.toDataURL('image/jpeg');
+      setImagePreview(base64String);
+
+      const base64Data = base64String.split(',')[1];
+
+      // Send to server
+      const response = await fetch('/api/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64Data, mimeType: 'image/jpeg' }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to analyze the image.');
+      }
+
+      setResult(data.result);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'An error occurred while grabbing the camera frame.');
+      setImagePreview(null);
+      // Restart camera stream so they can try again
+      startLiveCamera();
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCapture = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -64,6 +164,8 @@ export default function Scanner() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    // Reinitialize direct live camera stream if supported
+    startLiveCamera();
   };
 
   // Try to parse the strict JSON model response
@@ -123,7 +225,7 @@ export default function Scanner() {
       {/* Header Navigation */}
       <nav id="app-nav" className="px-6 py-5 md:px-12 md:py-6 flex justify-between items-center border-b border-[#E5E2D8] bg-white/40 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#7D8B7D] rounded-full flex items-center justify-center text-white">
+          <div className="w-10 h-10 bg-[#7D8B7D] rounded-full flex items-center justify-center text-white pb-0.5">
             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M2 9V5a2 2 0 0 1 2-2h4"/>
               <path d="M16 3h4a2 2 0 0 1 2 2v4"/>
@@ -146,14 +248,35 @@ export default function Scanner() {
         
         {/* Left/Preview Panel: Camera scan activator & Viewfinder */}
         <section id="scanner-interface" className="w-full lg:w-1/3 flex flex-col gap-6">
-          <div className="flex-1 min-h-[280px] bg-[#2D2D2D] rounded-[44px] relative overflow-hidden flex items-center justify-center">
+          <div className="flex-1 min-h-[300px] bg-[#2D2D2D] rounded-[44px] relative overflow-hidden flex items-center justify-center border border-[#E5E2D8]/30">
             {imagePreview ? (
               <div className="absolute inset-0 w-full h-full p-1.5">
                 <img src={imagePreview} alt="Captured cover" className="w-full h-full object-cover rounded-[38px]" />
               </div>
+            ) : cameraActive ? (
+              <div className="absolute inset-0 w-full h-full">
+                <video 
+                  ref={videoRef}
+                  autoPlay 
+                  playsInline 
+                  className="w-full h-full object-cover"
+                />
+                {/* Visual crop overlay */}
+                <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-8">
+                  <div className="flex justify-between">
+                    <div className="w-6 h-6 border-t-2 border-l-2 border-white/80 rounded-tl"></div>
+                    <div className="w-6 h-6 border-t-2 border-r-2 border-white/80 rounded-tr"></div>
+                  </div>
+                  <div className="w-full h-[1px] bg-[#7D8B7D]/40 animate-pulse"></div>
+                  <div className="flex justify-between">
+                    <div className="w-6 h-6 border-b-2 border-l-2 border-white/80 rounded-bl"></div>
+                    <div className="w-6 h-6 border-b-2 border-r-2 border-white/80 rounded-br"></div>
+                  </div>
+                </div>
+              </div>
             ) : (
               <>
-                {/* Viewfinder simulation using modern Unsplash book art */}
+                {/* Fallback Viewfinder simulation using modern Unsplash book art */}
                 <div className="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=800')] bg-cover bg-center"></div>
                 <div className="absolute inset-0 border-[32px] border-black/30"></div>
                 <div className="relative z-10 w-44 h-56 border-2 border-dashed border-white/40 rounded-2xl flex items-center justify-center">
@@ -167,15 +290,29 @@ export default function Scanner() {
             )}
           </div>
 
-          <button 
-            id="camera-trigger"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={loading}
-            className="w-full bg-[#5A5A40] text-white py-6 rounded-[32px] shadow-lg hover:bg-[#4A4A33] hover:shadow-xl active:scale-[0.98] transition-all flex flex-col items-center gap-1 group cursor-pointer disabled:opacity-50"
-          >
-            <span className="text-lg font-bold tracking-wide">Scan Book or Movie Cover</span>
-            <span className="text-[10px] uppercase tracking-[0.2em] opacity-60">Trigger System Camera</span>
-          </button>
+          {cameraActive ? (
+            <button 
+              id="camera-trigger-instant"
+              onClick={handleCaptureFromStream}
+              disabled={loading}
+              className="w-full bg-[#5A5A40] text-white py-6 rounded-[32px] shadow-lg hover:bg-[#4D4D33] hover:shadow-xl active:scale-[0.98] transition-all flex flex-col items-center gap-1 group cursor-pointer disabled:opacity-50"
+            >
+              <span className="text-lg font-bold tracking-wide flex items-center gap-2">
+                <Camera className="w-5 h-5" /> Capture Cover Instantly
+              </span>
+              <span className="text-[10px] uppercase tracking-[0.2em] opacity-60">Zero Approval Step</span>
+            </button>
+          ) : (
+            <button 
+              id="camera-trigger"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={loading}
+              className="w-full bg-[#5A5A40] text-white py-6 rounded-[32px] shadow-lg hover:bg-[#4A4A33] hover:shadow-xl active:scale-[0.98] transition-all flex flex-col items-center gap-1 group cursor-pointer disabled:opacity-50"
+            >
+              <span className="text-lg font-bold tracking-wide">Scan Book or Movie Cover</span>
+              <span className="text-[10px] uppercase tracking-[0.2em] opacity-60">Trigger System Camera</span>
+            </button>
+          )}
         </section>
 
         {/* Right/Result Panel: Dynamic content readout */}
@@ -191,11 +328,16 @@ export default function Scanner() {
                   <path d="M6 10h10"/>
                 </svg>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <h3 className="text-2xl font-serif text-[#4A4A3F] font-bold">Awaiting Scan</h3>
                 <p className="text-[#7D8B7D] text-sm max-w-sm mx-auto leading-relaxed">
                   Provide a clean portrait image of any novel cover or theatrical film poster. Verve Lens will pull verified database scores.
                 </p>
+                {hasCameraPermission === false && (
+                  <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200 inline-block">
+                    Note: Live stream disabled. Using local device camera storage instead.
+                  </p>
+                )}
               </div>
             </div>
           )}
