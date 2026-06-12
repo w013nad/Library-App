@@ -1,0 +1,10 @@
+{
+  "name": "Cover Scanner",
+  "description": "Scan a book or movie cover to get its rating and summary.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
