@@ -8,29 +8,42 @@
 
 To build and run the mobile app on your physical device, follow these quick steps:
 
-1. **Install Dependencies**:
+1. **Get a Google AI Studio API Key & Set Up `.env`**:
+   - Navigate to [Google AI Studio](https://aistudio.google.com/) and log in with your Google account.
+   - Click **Get API key** and generate a new key.
+   - In the root directory of this project, create a file named `.env`. You can copy the template:
+     ```bash
+     cp .env.example .env
+     ```
+   - Open `.env` in a text editor and add your key:
+     ```env
+     GEMINI_API_KEY="paste_your_google_ai_studio_api_key_here"
+     ```
+   - *(Optional)* Add a `GEMINI_API_KEY_BACKUP` to act as a free fallback key (with search grounding disabled) if your primary key runs out of quota.
+
+2. **Install Dependencies**:
    ```bash
    npm install
    ```
 
-2. **Build the Web Assets**:
+3. **Build the Web Assets**:
    ```bash
    npm run build
    ```
 
-3. **Generate native Android assets and sync**:
+4. **Generate native Android assets and sync**:
    ```bash
    npx cap sync
    ```
 
-4. **Create the APK in Android Studio**:
+5. **Create the APK in Android Studio**:
    - Open **Android Studio**.
    - Select **Open an Existing Project** and choose the `android/` directory of this project.
    - Wait for Gradle sync to complete.
    - In the top menu, go to **Build > Build Bundle(s) / APK(s) > Build APK(s)**.
    - When finished, click **Locate** in the bottom-right notification to find the compiled `app-debug.apk`.
 
-5. **Install on your Phone**:
+6. **Install on your Phone**:
    - Copy the `app-debug.apk` file over to your Android phone (via USB, Google Drive, email, or local sharing).
    - Locate the APK file in your phone's File Manager and tap it to install (enable "Install from unknown sources" if prompted).
 
