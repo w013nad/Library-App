@@ -54,19 +54,24 @@ export default function Scanner() {
     useGrounding: boolean
   ): Promise<any> => {
     const prompt = `Identify the book or movie cover in this photo.
-CRITICAL: You MUST use the Google Search grounding tool for EVERY SINGLE request to look up the most current and exact Goodreads (if a book) or IMDb (if a movie/show) rating. Do not guess, estimate, or rely on your pre-training knowledge for the rating; you MUST execute a web search.
-Verify the facts, title, creator/author/director, and release year using Google Search.
+CRITICAL Search Grounding Rules:
+1. You MUST use the Google Search grounding tool for EVERY SINGLE request. Do not rely on your pre-training knowledge.
+2. For books ("mediaType": "book"): You MUST find the rating on Goodreads. The "rating" value in the JSON response MUST be formatted strictly as "X.XX/5 on Goodreads" (e.g., "4.12/5 on Goodreads").
+3. For movies/shows ("mediaType": "movie"): You MUST find the rating on IMDb. The "rating" value in the JSON response MUST be formatted strictly as "X.X/10 on IMDb" (e.g., "6.8/10 on IMDb").
+4. Under NO circumstances should you return ratings from other sites (such as Rotten Tomatoes, Moviefone, Metacritic, or Letterboxd) for the rating field. If a Goodreads or IMDb rating is absolutely not found in the search results, return "N/A" for the rating field.
 
 You MUST respond ONLY with a raw JSON object matching the exact schema below.
-CRITICAL: Do NOT wrap the JSON block in markdown code fences (do NOT use \`\`\` or \`\`\`json).
-CRITICAL: Do NOT include any conversational preamble, introduction, markdown headers, or postscript text. The very first character of your response MUST be '{' and the very last character MUST be '}'.
+CRITICAL Formatting Rules:
+- Do NOT wrap the JSON block in markdown code fences (do NOT use \`\`\` or \`\`\`json).
+- Do NOT include any conversational preamble, introduction, markdown headers, or postscript text.
+- The very first character of your response MUST be '{' and the very last character MUST be '}'.
 
 Expected JSON Schema:
 {
   "title": "Exact Title of the Book or Movie",
   "creator": "Author(s) or Principal Director",
   "mediaType": "book" or "movie",
-  "rating": "Exact rating found (e.g., '4.32/5' for Goodreads or '8.2/10' for IMDb)",
+  "rating": "The IMDb or Goodreads rating matching the strict rules above, or 'N/A'",
   "genre": "Primary Genre",
   "theme": "Prominent theme or core motif",
   "choice": "Release Year: [Year]",
