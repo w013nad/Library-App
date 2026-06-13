@@ -19,7 +19,6 @@ To build and run the mobile app on your physical device, follow these quick step
      ```env
      GEMINI_API_KEY="paste_your_google_ai_studio_api_key_here"
      ```
-   - *(Optional)* Add a `GEMINI_API_KEY_BACKUP` to act as a free fallback key (with search grounding disabled) if your primary key runs out of quota.
 
 2. **Install Dependencies**:
    ```bash
@@ -53,25 +52,16 @@ To build and run the mobile app on your physical device, follow these quick step
 
 ```mermaid
 graph TD
-    A[Mobile / Web Client] --> B{Connection Mode}
-    B -->|Direct Mode| C[Gemini / Vertex API Endpoint]
-    B -->|Server Mode| D[Express Backend Server]
-    D --> E[Google Gen AI SDK]
-    E --> C
-    C --> F{GCP Provider}
-    F -->|Google AI Studio| G[Gemini 2.5 / 3.5 Models]
-    F -->|Vertex AI| H[Vertex AI Model Endpoints]
+    A[Mobile / Web Client] -->|Direct Mode| C[Gemini AI Studio Endpoint]
+    C --> G[Gemini 2.5 / 3.5 Models]
     G --> I[Google Search Grounding]
-    H --> I
     I --> J[Live Web Query: Goodreads / IMDb]
     J --> K[JSON Schema Response]
     K --> A
 ```
 
-### 1. Dual Connection Modes
-To ensure developer flexibility, the client app can route requests in two ways:
-- **Direct Mode (Serverless)**: Bypasses the Node.js backend server entirely. The browser client connects directly to Google's API endpoints. API keys can either be injected during compilation via your `.env` file or configured dynamically inside the client-side settings menu (and saved securely to browser `localStorage`).
-- **Server Mode**: The client makes a POST request to the local Express backend `/api/scan`. The backend server initializes the `@google/genai` SDK using server-side environment variables. This mode is ideal for local development, securing credentials, or hosting the application in containerized environments (such as Google Cloud Run).
+### 1. Direct Connection Mode (Serverless)
+The client app operates in a pure serverless Direct Mode, bypassing the Node.js server for API processing. The browser client connects directly to Google's API endpoints. API keys can either be injected during compilation via your `.env` file or configured dynamically inside the client-side settings menu (and saved securely to browser `localStorage`).
 
 ### 2. Search Grounding & Real-Time Ratings
 Standard LLMs suffer from training cutoffs and lack precise catalog rating information. Library Scanner overcomes this by enabling **Google Search Grounding** within the model configuration. 
@@ -80,11 +70,9 @@ When a cover is uploaded:
 2. A search grounding query is executed to lookup the current live community score (e.g., Goodreads for books or IMDb for movies/shows).
 3. The results are parsed and validated against the web grounding sources before being structured into a typed JSON schema.
 
-### 3. Smart Fallback Engine (Direct & Server)
-To optimize costs, handle billing caps, and maintain service availability:
+### 3. Smart Fallback Engine
+To maintain service availability and handle model configuration limits:
 - **Model Compatibility Fallback**: If a selected model (such as Gemini 3.5) does not support Search Grounding on your credentials (throwing a `400 Bad Request`), the engine catches the exception and immediately retries the request using `gemini-2.5-flash`.
-- **Billing / Quota Fallback**: If the primary API key encounters a quota limit (`429`), billing issue (`402`), or validation error, the engine automatically attempts to complete the request using a **Backup API Key** (if provided). In this fallback mode, Search Grounding is disabled to ensure the request is free/low-cost.
-- **Lite Fallback**: If no backup key is configured, the system falls back to running on `gemini-2.5-flash-lite` to try to process the request under standard free tiers.
 
 ### 4. Thinking Configuration Management
 For next-generation Gemini models (3.x+), the SDK configures `thinkingLevel: MINIMAL` to lower generation latency and speed up scan responses. For legacy Gemini models (2.5-flash/lite), thinking budget is turned off (`thinkingBudget: 0`) since thinking is not supported.
@@ -120,25 +108,17 @@ Library Scanner employs a high-premium, organic, and minimalist design language:
 
 ---
 
-## ⚙️ Development & Server Mode Setup
+## ⚙️ Development Setup
 
 ### Configure Environment Variables
 Create a `.env` file in the root directory and define the credentials:
 ```env
-# Google AI Studio API Key (Primary)
+# Google AI Studio API Key
 GEMINI_API_KEY="AIzaSyYourAPIKeyHere..."
-
-# Optional Backup API Key (used for free fallback without grounding when primary fails)
-GEMINI_API_KEY_BACKUP="AIzaSyYourBackupAPIKeyHere..."
-
-# Optional Vertex AI / Google Cloud Settings
-# VERTEX_AI_PROJECT="your-gcp-project-id"
-# VERTEX_AI_LOCATION="us-central1"
-# VERTEX_AI_API_KEY="your-restricted-gcp-api-key"
 ```
 
 ### Run the App Locally
-Start the unified Vite + Express development server:
+Start the local development server:
 ```bash
 npm run dev
 ```
@@ -149,7 +129,7 @@ Open your browser and navigate to `http://localhost:3000`.
 ## 📱 Mobile Syncing & Asset Generation
 
 > [!NOTE]
-> Since mobile devices cannot easily reach `localhost` loopback addresses, if you run in **Server Mode**, you should set the **Express Server URL** in the application settings (gear icon) to your machine's local network IP address (e.g. `http://192.168.1.150:3000`). Alternatively, switch to **Direct Mode** to request API queries straight from your phone to Google endpoints.
+> Since mobile devices cannot easily reach `localhost` loopback addresses, you must configure your Gemini API Key directly inside the app's settings menu (gear icon) on your physical phone so that it can make direct requests.
 
 ### Generating App Icons & Splash Screens
 Capacitor Assets will automatically crop and scale the master icon file (`assets/icon.png`) to fit all required device density slots:

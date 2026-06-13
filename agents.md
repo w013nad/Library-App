@@ -65,14 +65,17 @@ The output APK is placed at `android/app/build/outputs/apk/debug/app-debug.apk`.
 
 ## 4. Architecture & Technical Rules
 
-### A. Dual Connection Modes
-The client app in [Scanner.tsx](file:///c:/code/Library-App/src/components/Scanner.tsx) operates in two API modes:
-1. **Direct Mode (Serverless)**: Bypasses the backend node server entirely. Connects directly to Google's Gemini API using an API key. This mode is the default and uses the key injected at build time from the `.env` file, or a key stored locally in the user's browser storage.
-2. **Server Mode**: Hits the Express backend `/api/scan` route. The frontend uses `serverUrl` (persisted in `localStorage`) to prefix requests so they can reach the development computer's IP address (e.g. `http://192.168.x.x:3000`) from a physical phone.
+### A. Direct Connection Mode (Serverless)
+The client app in [Scanner.tsx](file:///c:/code/Library-App/src/components/Scanner.tsx) connects directly to Google's Gemini API using an API key (either saved in the browser/localStorage, or configured from env). It bypasses the backend Node server entirely.
 
 ### B. Environment Key Injection
 - The Vite build configuration in [vite.config.ts](file:///c:/code/Library-App/vite.config.ts) injects the server's `.env` key into `import.meta.env.VITE_GEMINI_API_KEY`.
 - If modifying Vite configuration, **do not change HMR / file watching rules** that are guarded by the `DISABLE_HMR` environment variable, as this prevents IDE flickering during development.
+
+### C. Structured JSON Output Constraints
+- **Gemini API Limitation**: Structured outputs (such as `responseMimeType: "application/json"` and `responseSchema`) **cannot** be used in combination with tool use (like Google Search Grounding/`googleSearch`). Doing so will trigger a `Tool use with a response mime type: 'application/json' is unsupported` API error.
+- **Implementation**: To support real-time Goodreads and IMDb rating lookups via Google Search Grounding, we disable structured output configuration in the API payload and instead enforce JSON schema compliance purely via prompt instruction.
+- **Client-Side Parsing**: Since the API does not force a JSON schema at the protocol level, [Scanner.tsx](file:///c:/code/Library-App/src/components/Scanner.tsx) uses a robust client-side parser (`parseInsight`) with regular expression fallbacks to extract, clean, and parse the JSON response.
 
 ---
 

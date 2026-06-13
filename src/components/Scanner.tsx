@@ -8,139 +8,41 @@ export default function Scanner() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   
   // Connection Settings States
-  const [apiMode, setApiMode] = useState<'server' | 'direct'>(() => {
-    const savedMode = localStorage.getItem('verve_lens_api_mode');
-    if (savedMode === 'server' || savedMode === 'direct') return savedMode;
-    const bundledKey = (import.meta.env as any).VITE_GEMINI_API_KEY;
-    return bundledKey ? 'direct' : 'server';
-  });
-
-  const [serverUrl, setServerUrl] = useState<string>(() => {
-    return localStorage.getItem('verve_lens_server_url') || '';
-  });
-
   const [customApiKey, setCustomApiKey] = useState<string>(() => {
     return localStorage.getItem('verve_lens_api_key') || '';
   });
 
-  const [backupApiKey, setBackupApiKey] = useState<string>(() => {
-    return localStorage.getItem('verve_lens_api_key_backup') || '';
-  });
-
-  const [directProvider, setDirectProvider] = useState<'aistudio' | 'vertex'>(() => {
-    const savedProvider = localStorage.getItem('verve_lens_direct_provider');
-    if (savedProvider === 'aistudio' || savedProvider === 'vertex') return savedProvider;
-    const bundledVertexProject = (import.meta.env as any).VITE_VERTEX_AI_PROJECT;
-    return bundledVertexProject ? 'vertex' : 'aistudio';
-  });
-
-  const [vertexProject, setVertexProject] = useState<string>(() => {
-    return localStorage.getItem('verve_lens_vertex_project') || (import.meta.env as any).VITE_VERTEX_AI_PROJECT || '';
-  });
-
-  const [vertexLocation, setVertexLocation] = useState<string>(() => {
-    return localStorage.getItem('verve_lens_vertex_location') || (import.meta.env as any).VITE_VERTEX_AI_LOCATION || 'us-central1';
-  });
-
-  const [vertexKey, setVertexKey] = useState<string>(() => {
-    return localStorage.getItem('verve_lens_vertex_key') || (import.meta.env as any).VITE_VERTEX_AI_API_KEY || '';
-  });
-
   const [selectedModel, setSelectedModel] = useState<string>(() => {
-    const savedModel = localStorage.getItem('verve_lens_selected_model');
-    if (savedModel) return savedModel;
-    const primaryKey = localStorage.getItem('verve_lens_api_key') || '';
-    const bundledKey = (import.meta.env as any).VITE_GEMINI_API_KEY;
-    return (primaryKey.trim() || bundledKey) ? 'gemini-3.5-flash' : 'gemini-2.5-flash';
+    return localStorage.getItem('verve_lens_selected_model') || 'gemini-2.5-flash';
   });
 
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [usedBackupKey, setUsedBackupKey] = useState(false);
 
   // Temporary modal states
-  const [tempMode, setTempMode] = useState<'server' | 'direct'>(apiMode);
-  const [tempUrl, setTempUrl] = useState<string>(serverUrl);
   const [tempKey, setTempKey] = useState<string>(customApiKey);
-  const [tempBackupKey, setTempBackupKey] = useState<string>(backupApiKey);
-  const [tempDirectProvider, setTempDirectProvider] = useState<'aistudio' | 'vertex'>(directProvider);
-  const [tempVertexProject, setTempVertexProject] = useState<string>(vertexProject);
-  const [tempVertexLocation, setTempVertexLocation] = useState<string>(vertexLocation);
-  const [tempVertexKey, setTempVertexKey] = useState<string>(vertexKey);
   const [tempModel, setTempModel] = useState<string>(selectedModel);
 
   useEffect(() => {
     if (settingsOpen) {
-      setTempMode(apiMode);
-      setTempUrl(serverUrl);
       setTempKey(customApiKey);
-      setTempBackupKey(backupApiKey);
-      setTempDirectProvider(directProvider);
-      setTempVertexProject(vertexProject);
-      setTempVertexLocation(vertexLocation);
-      setTempVertexKey(vertexKey);
       setTempModel(selectedModel);
     }
-  }, [settingsOpen, apiMode, serverUrl, customApiKey, backupApiKey, directProvider, vertexProject, vertexLocation, vertexKey, selectedModel]);
+  }, [settingsOpen, customApiKey, selectedModel]);
 
   const getApiKey = () => {
     if (customApiKey.trim()) return customApiKey.trim();
-    const bundledKey = (import.meta.env as any).VITE_GEMINI_API_KEY;
+    const bundledKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
     return bundledKey || '';
   };
 
-  const getBackupApiKey = () => {
-    if (backupApiKey.trim()) return backupApiKey.trim();
-    const bundledBackupKey = (import.meta.env as any).VITE_GEMINI_API_KEY_BACKUP;
-    return bundledBackupKey || '';
-  };
-
-  const getVertexProject = () => {
-    if (vertexProject.trim()) return vertexProject.trim();
-    const bundledProject = (import.meta.env as any).VITE_VERTEX_AI_PROJECT;
-    return bundledProject || '';
-  };
-
-  const getVertexLocation = () => {
-    if (vertexLocation.trim()) return vertexLocation.trim();
-    const bundledLocation = (import.meta.env as any).VITE_VERTEX_AI_LOCATION;
-    return bundledLocation || 'us-central1';
-  };
-
-  const getVertexKey = () => {
-    if (vertexKey.trim()) return vertexKey.trim();
-    const bundledVertexKey = (import.meta.env as any).VITE_VERTEX_AI_API_KEY;
-    return bundledVertexKey || '';
-  };
-
   const handleSaveSettings = (
-    mode: 'server' | 'direct',
-    url: string,
     key: string,
-    backupKey: string,
-    model: string,
-    provider: 'aistudio' | 'vertex',
-    proj: string,
-    loc: string,
-    vKey: string
+    model: string
   ) => {
-    localStorage.setItem('verve_lens_api_mode', mode);
-    localStorage.setItem('verve_lens_server_url', url);
     localStorage.setItem('verve_lens_api_key', key);
-    localStorage.setItem('verve_lens_api_key_backup', backupKey);
     localStorage.setItem('verve_lens_selected_model', model);
-    localStorage.setItem('verve_lens_direct_provider', provider);
-    localStorage.setItem('verve_lens_vertex_project', proj);
-    localStorage.setItem('verve_lens_vertex_location', loc);
-    localStorage.setItem('verve_lens_vertex_key', vKey);
-    setApiMode(mode);
-    setServerUrl(url);
     setCustomApiKey(key);
-    setBackupApiKey(backupKey);
     setSelectedModel(model);
-    setDirectProvider(provider);
-    setVertexProject(proj);
-    setVertexLocation(loc);
-    setVertexKey(vKey);
     setSettingsOpen(false);
   };
 
@@ -149,14 +51,17 @@ export default function Scanner() {
     model: string,
     base64Data: string,
     mimeType: string,
-    useGrounding: boolean,
-    provider: 'aistudio' | 'vertex' = 'aistudio',
-    project: string = '',
-    location: string = 'us-central1'
+    useGrounding: boolean
   ): Promise<any> => {
     const prompt = `Identify the book or movie cover in this photo.
-Use your Google Search grounding tool to look up its exact current Goodreads (if a book) or IMDb (if a movie/show) rating.
-You MUST respond with a valid, clean JSON object matching this schema. Verify the facts using Google Search:
+CRITICAL: You MUST use the Google Search grounding tool for EVERY SINGLE request to look up the most current and exact Goodreads (if a book) or IMDb (if a movie/show) rating. Do not guess, estimate, or rely on your pre-training knowledge for the rating; you MUST execute a web search.
+Verify the facts, title, creator/author/director, and release year using Google Search.
+
+You MUST respond ONLY with a raw JSON object matching the exact schema below.
+CRITICAL: Do NOT wrap the JSON block in markdown code fences (do NOT use \`\`\` or \`\`\`json).
+CRITICAL: Do NOT include any conversational preamble, introduction, markdown headers, or postscript text. The very first character of your response MUST be '{' and the very last character MUST be '}'.
+
+Expected JSON Schema:
 {
   "title": "Exact Title of the Book or Movie",
   "creator": "Author(s) or Principal Director",
@@ -166,13 +71,9 @@ You MUST respond with a valid, clean JSON object matching this schema. Verify th
   "theme": "Prominent theme or core motif",
   "choice": "Release Year: [Year]",
   "synopsis": "Exactly one elegant sentence summarizing the item."
-}
-Return ONLY the raw JSON block. Do not add conversational text.`;
+}`;
 
-    const isVertex = provider === 'vertex';
-    const endpoint = isVertex
-      ? `https://${location}-aiplatform.googleapis.com/v1beta1/projects/${project}/locations/${location}/publishers/google/models/${model}:generateContent?key=${apiKey}`
-      : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
     // Configure thinking: disable for 2.5 models, minimize for 3.x models
     const thinkingConfig = model.startsWith('gemini-3')
@@ -184,19 +85,12 @@ Return ONLY the raw JSON block. Do not add conversational text.`;
         {
           role: 'user',
           parts: [
-            isVertex
-              ? {
-                  inline_data: {
-                    data: base64Data,
-                    mime_type: mimeType || 'image/jpeg'
-                  }
-                }
-              : {
-                  inlineData: {
-                    data: base64Data,
-                    mimeType: mimeType || 'image/jpeg'
-                  }
-                },
+            {
+              inlineData: {
+                data: base64Data,
+                mimeType: mimeType || 'image/jpeg'
+              }
+            },
             {
               text: prompt
             }
@@ -210,13 +104,9 @@ Return ONLY the raw JSON block. Do not add conversational text.`;
 
     if (useGrounding) {
       payload.tools = [
-        isVertex
-          ? {
-              google_search: {}
-            }
-          : {
-              googleSearch: {}
-            }
+        {
+          googleSearch: {}
+        }
       ];
     }
 
@@ -239,131 +129,41 @@ Return ONLY the raw JSON block. Do not add conversational text.`;
   };
 
   const performScan = async (base64Data: string, mimeType: string): Promise<string> => {
-    setUsedBackupKey(false);
-    if (apiMode === 'direct') {
-      const isVertex = directProvider === 'vertex';
-      const primaryKey = isVertex ? getVertexKey() : getApiKey();
-      const backupKey = getBackupApiKey();
-      const vProject = getVertexProject();
-      const vLocation = getVertexLocation();
+    const primaryKey = getApiKey();
 
-      if (isVertex && !primaryKey) {
-        throw new Error("No Vertex AI API key is configured. Please open Settings and enter your key.");
-      }
-      if (isVertex && !vProject) {
-        throw new Error("No Google Cloud Project ID is configured for Vertex AI. Please open Settings and configure it.");
-      }
-      if (!isVertex && !primaryKey && !backupKey) {
-        throw new Error("No Gemini API key is configured. Please open Settings and enter your key.");
-      }
-
-      let data;
-      let primaryFailed = false;
-      let primaryErrorMsg = '';
-
-      if (primaryKey) {
-        try {
-          data = await callGeminiAPI(primaryKey, selectedModel, base64Data, mimeType, true, directProvider, vProject, vLocation);
-        } catch (err: any) {
-          console.warn("Primary API key failed:", err);
-          primaryErrorMsg = err.message || '';
-
-          // Check if it's a model compatibility issue with search grounding (400 Bad Request)
-          const isUnsupportedToolError = 
-            err.status === 400 && 
-            (primaryErrorMsg.toLowerCase().includes('tool') || 
-             primaryErrorMsg.toLowerCase().includes('grounding') || 
-             primaryErrorMsg.toLowerCase().includes('support') || 
-             primaryErrorMsg.toLowerCase().includes('googlesearch'));
-
-          if (isUnsupportedToolError && selectedModel !== 'gemini-2.5-flash') {
-            console.log("Selected model does not support Search Grounding. Retrying with gemini-2.5-flash...");
-            try {
-              data = await callGeminiAPI(primaryKey, 'gemini-2.5-flash', base64Data, mimeType, true, directProvider, vProject, vLocation);
-            } catch (retryErr: any) {
-              console.warn("Retry with gemini-2.5-flash failed:", retryErr);
-              primaryFailed = true;
-              primaryErrorMsg = retryErr.message || '';
-            }
-          } else {
-            primaryFailed = true;
-          }
-
-          if (primaryFailed) {
-            const isBillingOrQuotaError = 
-              err.status === 402 || 
-              err.status === 429 || 
-              err.status === 403 ||
-              primaryErrorMsg.toLowerCase().includes('billing') || 
-              primaryErrorMsg.toLowerCase().includes('quota') || 
-              primaryErrorMsg.toLowerCase().includes('limit') || 
-              primaryErrorMsg.toLowerCase().includes('prepay') ||
-              primaryErrorMsg.toLowerCase().includes('payment') ||
-              primaryErrorMsg.toLowerCase().includes('key not valid') ||
-              primaryErrorMsg.toLowerCase().includes('api key');
-
-            if (isBillingOrQuotaError && backupKey) {
-              console.log("Attempting fallback to Backup (Free) API key...");
-            } else {
-              throw err;
-            }
-          }
-        }
-      } else {
-        primaryFailed = true;
-      }
-
-      if (primaryFailed && backupKey) {
-        try {
-          setUsedBackupKey(true);
-          data = await callGeminiAPI(backupKey, selectedModel, base64Data, mimeType, false, 'aistudio');
-        } catch (backupErr: any) {
-          console.error("Backup API key also failed:", backupErr);
-          const errorMsg = primaryKey 
-            ? `Primary key failed (${primaryErrorMsg}). Backup key also failed: ${backupErr.message}` 
-            : `Backup key failed: ${backupErr.message}`;
-          throw new Error(errorMsg);
-        }
-      }
-
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) {
-        throw new Error('Received an empty response from Gemini. Please try again with a clearer picture.');
-      }
-
-      return text;
-    } else {
-      const cleanServerUrl = serverUrl.trim().replace(/\/$/, '');
-      const endpoint = cleanServerUrl ? `${cleanServerUrl}/api/scan` : '/api/scan';
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: base64Data, mimeType, model: selectedModel }),
-      });
-
-      const contentType = response.headers.get('content-type') || '';
-      if (contentType.includes('text/html')) {
-        const htmlText = await response.text();
-        if (htmlText.trim().startsWith('<')) {
-          if (!serverUrl) {
-            throw new Error(
-              "Local route not found. Since you are running on a mobile device, please open Settings (gear icon) and configure your laptop's local network IP address, or switch to Direct Mode using your Gemini API Key."
-            );
-          } else {
-            throw new Error(`The server at ${cleanServerUrl} returned an HTML page instead of JSON. Ensure your server is running on that port.`);
-          }
-        }
-      }
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to analyze the image.');
-      }
-
-      return data.result;
+    if (!primaryKey) {
+      throw new Error("No Gemini API key is configured. Please open Settings and enter your key.");
     }
+
+    let data;
+    try {
+      data = await callGeminiAPI(primaryKey, selectedModel, base64Data, mimeType, true);
+    } catch (err: any) {
+      console.warn("API key failed:", err);
+      const errorMsg = err.message || '';
+
+      // Check if it's a model compatibility issue with search grounding (400 Bad Request)
+      const isUnsupportedToolError = 
+        err.status === 400 && 
+        (errorMsg.toLowerCase().includes('tool') || 
+         errorMsg.toLowerCase().includes('grounding') || 
+         errorMsg.toLowerCase().includes('support') || 
+         errorMsg.toLowerCase().includes('googlesearch'));
+
+      if (isUnsupportedToolError && selectedModel !== 'gemini-2.5-flash') {
+        console.log("Selected model does not support Search Grounding. Retrying with gemini-2.5-flash...");
+        data = await callGeminiAPI(primaryKey, 'gemini-2.5-flash', base64Data, mimeType, true);
+      } else {
+        throw err;
+      }
+    }
+
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) {
+      throw new Error('Received an empty response from Gemini. Please try again with a clearer picture.');
+    }
+
+    return text;
   };
 
   // Real-time streaming states
@@ -575,8 +375,8 @@ Return ONLY the raw JSON block. Do not add conversational text.`;
         </div>
         <div className="flex gap-4 items-center">
           <div className="flex gap-2.5 items-center text-xs font-bold uppercase tracking-widest text-[#7D8B7D]">
-            <span className="hidden sm:inline">{apiMode === 'direct' ? 'Direct (Serverless)' : 'Server Mode'}</span>
-            <div className={`w-2 h-2 rounded-full ${apiMode === 'direct' ? 'bg-[#5A5A40]' : 'bg-[#7D8B7D]'} animate-pulse`}></div>
+            <span className="hidden sm:inline">AI Studio Direct</span>
+            <div className="w-2 h-2 rounded-full bg-[#5A5A40] animate-pulse"></div>
           </div>
           <button 
             id="settings-toggle"
@@ -602,7 +402,7 @@ Return ONLY the raw JSON block. Do not add conversational text.`;
             ) : cameraActive ? (
               <div className="absolute inset-0 w-full h-full">
                 <video 
-                  ref={videoRef}
+                   ref={videoRef}
                   autoPlay 
                   playsInline 
                   className="w-full h-full object-cover"
@@ -729,7 +529,6 @@ Return ONLY the raw JSON block. Do not add conversational text.`;
                   <div className="space-y-1">
                     <span className="text-xs font-bold uppercase tracking-widest text-[#7D8B7D]">
                       {insight?.mediaType === 'book' ? 'Identified Book' : 'Identified Movie'}
-                      {usedBackupKey && <span className="text-amber-600 lowercase ml-2 font-normal">(using free backup key - search disabled)</span>}
                     </span>
                     <h2 className="text-3xl font-serif font-bold leading-tight text-[#2D2D2D]">
                       {insight?.title || 'Cover Identified'}
@@ -818,12 +617,12 @@ Return ONLY the raw JSON block. Do not add conversational text.`;
       <footer id="app-footer" className="px-6 py-5 md:px-12 md:py-5 border-t border-[#E5E2D8] flex flex-col sm:flex-row justify-between items-center bg-[#F5F5F0] gap-3 shrink-0">
         <div className="flex items-center gap-4">
           <div className="flex gap-1">
-            <div className={`w-1.5 h-1.5 rounded-full ${usedBackupKey ? 'bg-amber-500' : 'bg-[#7D8B7D]'}`}></div>
-            <div className={`w-1.5 h-1.5 rounded-full ${usedBackupKey ? 'bg-amber-500' : 'bg-[#7D8B7D]'}`}></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-[#7D8B7D]"></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-[#7D8B7D]"></div>
             <div className="w-1.5 h-1.5 rounded-full bg-[#7D8B7D] opacity-30"></div>
           </div>
           <span className="text-[10px] font-bold uppercase tracking-widest text-[#7D8B7D]">
-            {usedBackupKey ? 'Grounding Tool: Inactive (Free Backup Key)' : 'Grounding Tool: Google Search Active'}
+            Grounding Tool: Google Search Active
           </span>
         </div>
         <div className="text-[10px] font-bold uppercase tracking-widest text-[#7D8B7D] opacity-60">
@@ -845,32 +644,6 @@ Return ONLY the raw JSON block. Do not add conversational text.`;
                 className="p-1.5 hover:bg-[#FAF9F6] rounded-full text-[#7D8B7D] cursor-pointer border border-[#E5E2D8]/40"
               >
                 <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Mode selection tabs */}
-            <div className="flex bg-[#FAF9F6] p-1 rounded-2xl border border-[#E5E2D8]/60">
-              <button
-                type="button"
-                onClick={() => setTempMode('direct')}
-                className={`flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all cursor-pointer ${
-                  tempMode === 'direct' 
-                    ? 'bg-[#5A5A40] text-white shadow-sm' 
-                    : 'text-[#7D8B7D] hover:text-[#5A5A40]'
-                }`}
-              >
-                Direct (Serverless)
-              </button>
-              <button
-                type="button"
-                onClick={() => setTempMode('server')}
-                className={`flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all cursor-pointer ${
-                  tempMode === 'server' 
-                    ? 'bg-[#5A5A40] text-white shadow-sm' 
-                    : 'text-[#7D8B7D] hover:text-[#5A5A40]'
-                }`}
-              >
-                Local Server
               </button>
             </div>
 
@@ -898,143 +671,25 @@ Return ONLY the raw JSON block. Do not add conversational text.`;
                 </div>
               </div>
 
-              {tempMode === 'direct' ? (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-[#7D8B7D] block">
-                      API Credentials Type
-                    </label>
-                    <div className="flex bg-[#FAF9F6] p-1 rounded-2xl border border-[#E5E2D8]/60">
-                      <button
-                        type="button"
-                        onClick={() => setTempDirectProvider('aistudio')}
-                        className={`flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
-                          tempDirectProvider === 'aistudio'
-                            ? 'bg-[#5A5A40] text-white shadow-sm'
-                            : 'text-[#7D8B7D] hover:text-[#5A5A40]'
-                        }`}
-                      >
-                        Google AI Studio
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setTempDirectProvider('vertex')}
-                        className={`flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
-                          tempDirectProvider === 'vertex'
-                            ? 'bg-[#5A5A40] text-white shadow-sm'
-                            : 'text-[#7D8B7D] hover:text-[#5A5A40]'
-                        }`}
-                      >
-                        Vertex AI (GCP)
-                      </button>
-                    </div>
-                  </div>
-
-                  {tempDirectProvider === 'aistudio' ? (
-                    <>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-[#7D8B7D] block">
-                          Primary API Key (Paid / Credit)
-                        </label>
-                        <input
-                          type="password"
-                          value={tempKey}
-                          onChange={(e) => setTempKey(e.target.value)}
-                          placeholder={getApiKey() ? "••••••••••••••••••••••••" : "Enter Paid API Key"}
-                          className="w-full bg-[#FAF9F6] border border-[#E5E2D8] rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-[#7D8B7D] text-[#2D2D2D]"
-                        />
-                        <p className="text-[10px] text-[#7D8B7D] leading-relaxed font-sans">
-                          {(import.meta.env as any).VITE_GEMINI_API_KEY ? (
-                            <span className="text-emerald-700 font-semibold">✓ Default key bundled from `.env` is active.</span>
-                          ) : (
-                            "Main API key. Supports search grounding for Goodreads/IMDb ratings."
-                          )}
-                        </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-[#7D8B7D] block">
-                          Backup API Key (Free / Fallback)
-                        </label>
-                        <input
-                          type="password"
-                          value={tempBackupKey}
-                          onChange={(e) => setTempBackupKey(e.target.value)}
-                          placeholder={getBackupApiKey() ? "••••••••••••••••••••••••" : "Enter Free API Key"}
-                          className="w-full bg-[#FAF9F6] border border-[#E5E2D8] rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-[#7D8B7D] text-[#2D2D2D]"
-                        />
-                        <p className="text-[10px] text-[#7D8B7D] leading-relaxed font-sans">
-                          {(import.meta.env as any).VITE_GEMINI_API_KEY_BACKUP ? (
-                            <span className="text-emerald-700 font-semibold">✓ Default backup key bundled from `.env` is active.</span>
-                          ) : (
-                            "Fallback key if the primary runs out of credits. Search grounding will be disabled."
-                          )}
-                        </p>
-                      </div>
-                    </>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[#7D8B7D] block">
+                  Google AI Studio API Key
+                </label>
+                <input
+                  type="password"
+                  value={tempKey}
+                  onChange={(e) => setTempKey(e.target.value)}
+                  placeholder={getApiKey() ? "••••••••••••••••••••••••" : "Enter API Key"}
+                  className="w-full bg-[#FAF9F6] border border-[#E5E2D8] rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-[#7D8B7D] text-[#2D2D2D]"
+                />
+                <p className="text-[10px] text-[#7D8B7D] leading-relaxed font-sans">
+                  {(import.meta as any).env?.VITE_GEMINI_API_KEY ? (
+                    <span className="text-emerald-700 font-semibold">✓ Default key bundled from `.env` is active.</span>
                   ) : (
-                    <>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-[#7D8B7D] block">
-                          Google Cloud Project ID
-                        </label>
-                        <input
-                          type="text"
-                          value={tempVertexProject}
-                          onChange={(e) => setTempVertexProject(e.target.value)}
-                          placeholder={getVertexProject() || "Enter GCP Project ID"}
-                          className="w-full bg-[#FAF9F6] border border-[#E5E2D8] rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-[#7D8B7D] text-[#2D2D2D]"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-[#7D8B7D] block">
-                          GCP Location / Region
-                        </label>
-                        <input
-                          type="text"
-                          value={tempVertexLocation}
-                          onChange={(e) => setTempVertexLocation(e.target.value)}
-                          placeholder="e.g. us-central1"
-                          className="w-full bg-[#FAF9F6] border border-[#E5E2D8] rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-[#7D8B7D] text-[#2D2D2D]"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-[#7D8B7D] block">
-                          Vertex AI API Key (Express / Restricted)
-                        </label>
-                        <input
-                          type="password"
-                          value={tempVertexKey}
-                          onChange={(e) => setTempVertexKey(e.target.value)}
-                          placeholder={getVertexKey() ? "••••••••••••••••••••••••" : "Enter Vertex API Key"}
-                          className="w-full bg-[#FAF9F6] border border-[#E5E2D8] rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-[#7D8B7D] text-[#2D2D2D]"
-                        />
-                        <p className="text-[10px] text-[#7D8B7D] leading-relaxed font-sans">
-                          Requires a GCP API key restricted to Vertex AI, or an Express Mode key.
-                        </p>
-                      </div>
-                    </>
+                    "API key from Google AI Studio. Supports search grounding for Goodreads/IMDb ratings."
                   )}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-[#7D8B7D] block">
-                    Express Server URL
-                  </label>
-                  <input
-                    type="text"
-                    value={tempUrl}
-                    onChange={(e) => setTempUrl(e.target.value)}
-                    placeholder="e.g. http://192.168.1.100:3000"
-                    className="w-full bg-[#FAF9F6] border border-[#E5E2D8] rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-[#7D8B7D] text-[#2D2D2D]"
-                  />
-                  <p className="text-[10px] text-[#7D8B7D] leading-relaxed">
-                    Set this to your computer's local IP address (e.g., `http://192.168.x.x:3000`) so your phone can reach your home server. Leave blank to use relative paths.
-                  </p>
-                </div>
-              )}
+                </p>
+              </div>
             </div>
 
             <div className="flex gap-3 pt-2">
@@ -1047,17 +702,7 @@ Return ONLY the raw JSON block. Do not add conversational text.`;
               </button>
               <button
                 type="button"
-                onClick={() => handleSaveSettings(
-                  tempMode,
-                  tempUrl,
-                  tempKey,
-                  tempBackupKey,
-                  tempModel,
-                  tempDirectProvider,
-                  tempVertexProject,
-                  tempVertexLocation,
-                  tempVertexKey
-                )}
+                onClick={() => handleSaveSettings(tempKey, tempModel)}
                 className="flex-1 bg-[#5A5A40] text-white py-3.5 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-[#4A4A33] hover:shadow-md transition-all cursor-pointer"
               >
                 Save Changes

@@ -14,10 +14,6 @@ export default defineConfig(({ mode }) => {
     },
     define: {
       'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
-      'import.meta.env.VITE_GEMINI_API_KEY_BACKUP': JSON.stringify(env.GEMINI_API_KEY_BACKUP || ''),
-      'import.meta.env.VITE_VERTEX_AI_PROJECT': JSON.stringify(env.VERTEX_AI_PROJECT || ''),
-      'import.meta.env.VITE_VERTEX_AI_LOCATION': JSON.stringify(env.VERTEX_AI_LOCATION || ''),
-      'import.meta.env.VITE_VERTEX_AI_API_KEY': JSON.stringify(env.VERTEX_AI_API_KEY || ''),
     },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
